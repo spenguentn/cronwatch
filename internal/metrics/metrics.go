@@ -76,6 +76,16 @@ func (c *Collector) Get(name string) (JobStats, bool) {
 	return *s, true
 }
 
+// Reset clears all recorded statistics for the named job. If the job does not
+// exist, Reset is a no-op.
+func (c *Collector) Reset(name string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if _, ok := c.jobs[name]; ok {
+		c.jobs[name] = &JobStats{Name: name}
+	}
+}
+
 // getOrCreate must be called with the write lock held.
 func (c *Collector) getOrCreate(name string) *JobStats {
 	if _, ok := c.jobs[name]; !ok {
