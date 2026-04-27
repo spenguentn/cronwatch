@@ -1,29 +1,25 @@
-// Package notify provides outbound notification mechanisms for cronwatch alerts.
+// Package notify provides alert notification backends for cronwatch.
 //
-// It includes a WebhookNotifier that delivers alert payloads to HTTP endpoints
-// via POST requests, and a RetryNotifier that wraps any Notifier implementation
-// with configurable retry logic and exponential back-off.
+// Supported notifiers:
 //
-// # WebhookNotifier
+//   - WebhookNotifier: sends JSON payloads to an HTTP endpoint.
+//   - SlackNotifier:   sends formatted messages to a Slack incoming webhook.
+//   - EmailNotifier:   sends SMTP email alerts to one or more recipients.
+//   - RetryNotifier:   wraps any Notifier with configurable retry logic.
 //
-// The WebhookNotifier sends a JSON-encoded alert body to a configured URL.
-// It respects context cancellation and returns an error for non-2xx responses.
+// All notifiers implement the Notifier interface:
 //
-//	notifier := notify.NewWebhookNotifier("https://hooks.example.com/cronwatch", http.DefaultClient)
-//	err := notifier.Notify(ctx, alert.Event{...})
+//	type Notifier interface {
+//		Notify(ctx context.Context, level, message string) error
+//	}
 //
-// # RetryNotifier
+// Typical usage:
 //
-// RetryNotifier wraps another Notifier and retries on transient failures.
-// Attempts are spaced with a simple exponential back-off. The total number
-// of attempts (including the first) is controlled by the MaxAttempts field.
-//
-//	base := notify.NewWebhookNotifier(url, client)
-//	retrying := notify.NewRetryNotifier(base, notify.RetryConfig{
-//		MaxAttempts: 3,
-//		BaseDelay:   500 * time.Millisecond,
+//	base, _ := notify.NewEmailNotifier(notify.EmailConfig{
+//		Host: "smtp.example.com",
+//		From: "cronwatch@example.com",
+//		To:   []string{"ops@example.com"},
 //	})
-//
-// Both notifiers satisfy the alert.Notifier interface, so they can be
-// registered directly with an alert.Dispatcher.
+//	notifier := notify.NewRetryNotifier(base, 3, time.Second)
+//	notifier.Notify(ctx, "error", "job backup missed its window")
 package notify
