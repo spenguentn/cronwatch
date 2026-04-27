@@ -1,20 +1,26 @@
-// Package notify provides notification backends for cronwatch alerts.
+// Package notify provides notification backends and middleware for
+// cronwatch alerts.
 //
-// Supported notifiers:
+// Backends
 //
-//   - WebhookNotifier: sends a JSON POST to an arbitrary HTTP endpoint.
-//   - SlackNotifier: posts a message to a Slack incoming webhook URL.
-//   - EmailNotifier: delivers alerts via SMTP.
-//   - PagerDutyNotifier: triggers incidents via the PagerDuty Events API v2.
+// The following backends are available:
+//   - WebhookNotifier  – HTTP POST to an arbitrary URL.
+//   - SlackNotifier    – Slack incoming-webhook messages.
+//   - EmailNotifier    – SMTP email delivery.
+//   - PagerDutyNotifier – PagerDuty Events API v2.
 //
-// All notifiers implement a common Notify(ctx, msg) error signature and can
-// be composed with RetryNotifier to add automatic retry logic with
-// configurable attempts and back-off delay.
+// Middleware
 //
-// Example usage:
+// Backends can be wrapped with middleware that modifies delivery behaviour:
+//   - RetryNotifier   – retries failed deliveries with a fixed back-off.
+//   - MultiNotifier   – fans a single notification out to many backends.
+//   - FilterNotifier  – conditionally drops notifications based on a
+//                       caller-supplied FilterFunc predicate.
 //
-//	base, err := notify.NewPagerDutyNotifier(integrationKey)
-//	if err != nil { ... }
-//	n := notify.NewRetryNotifier(base, 3, 2*time.Second)
-//	if err := n.Notify(ctx, "cron job missed"); err != nil { ... }
+// FilterFunc helpers
+//
+//   SubjectContainsFilter – passes notifications whose subject contains
+//                           one of a set of substrings.
+//   SeverityFilter        – passes notifications whose subject starts with
+//                           one of a set of severity prefixes.
 package notify
