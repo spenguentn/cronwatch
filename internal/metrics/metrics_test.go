@@ -91,3 +91,22 @@ func TestMultipleJobs_Independent(t *testing.T) {
 		t.Errorf("beta MissedRuns should be 0, got %d", b.MissedRuns)
 	}
 }
+
+func TestRecordDrift_MultipleUpdatesLastDrift(t *testing.T) {
+	c := metrics.NewCollector()
+	first := 30 * time.Second
+	second := 120 * time.Second
+	c.RecordDrift("sync", first)
+	c.RecordDrift("sync", second)
+
+	s, ok := c.Get("sync")
+	if !ok {
+		t.Fatal("expected stats for sync")
+	}
+	if s.DriftEvents != 2 {
+		t.Errorf("DriftEvents = %d, want 2", s.DriftEvents)
+	}
+	if s.LastDrift != second {
+		t.Errorf("LastDrift = %v, want %v", s.LastDrift, second)
+	}
+}
