@@ -46,7 +46,7 @@ func TestPrevRun_InvalidExpr(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	tests := []struct {
-		expr  string
+		expr    string
 		wantErr bool
 	}{
 		{"0 * * * *", false},
@@ -58,6 +58,25 @@ func TestValidate(t *testing.T) {
 		err := Validate(tt.expr)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("Validate(%q): wantErr=%v, got %v", tt.expr, tt.wantErr, err)
+		}
+	}
+}
+
+func TestNextRun_IsAfterReference(t *testing.T) {
+	// NextRun should always return a time strictly after the reference time.
+	exprs := []string{
+		"*/5 * * * *",
+		"0 * * * *",
+		"*/15 9-17 * * 1-5",
+	}
+	for _, expr := range exprs {
+		next, err := NextRun(expr, fixedTime)
+		if err != nil {
+			t.Errorf("NextRun(%q): unexpected error: %v", expr, err)
+			continue
+		}
+		if !next.After(fixedTime) {
+			t.Errorf("NextRun(%q): expected result after %v, got %v", expr, fixedTime, next)
 		}
 	}
 }
