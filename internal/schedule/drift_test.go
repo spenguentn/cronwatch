@@ -62,3 +62,23 @@ func TestCheckDrift_InvalidExpr(t *testing.T) {
 		t.Fatal("expected error for invalid cron expression")
 	}
 }
+
+func TestCheckDrift_DriftValue(t *testing.T) {
+	now := time.Date(2024, 1, 15, 12, 6, 0, 0, time.UTC)
+	// Last run was 20 seconds after the expected 12:05 tick
+	lastRun := time.Date(2024, 1, 15, 12, 5, 20, 0, time.UTC)
+
+	res, err := CheckDrift("driftjob", "*/5 * * * *", lastRun, now, 30*time.Second)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Missed {
+		t.Error("expected job not to be marked missed")
+	}
+	if res.DriftExceeded {
+		t.Error("expected drift not to be exceeded for 20s drift with 30s threshold")
+	}
+	if res.Drift != 20*time.Second {
+		t.Errorf("expected drift of 20s, got %v", res.Drift)
+	}
+}
