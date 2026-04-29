@@ -65,6 +65,23 @@ func TestCheck_NoDrift_Silent(t *testing.T) {
 	}
 }
 
+func TestCheck_ExcessiveDrift_Warns(t *testing.T) {
+	jobs := []config.Job{{Name: "report", Schedule: "@hourly", DriftThreshold: 5 * time.Minute}}
+	w, updater, buf := makeWatcher(t, jobs)
+
+	now := time.Now()
+	// Record a run that is 20 minutes late relative to the expected hourly schedule.
+	if err := updater.Record("report", now.Add(-80*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+
+	w.check(now)
+
+	if buf.Len() == 0 {
+		t.Fatal("expected drift warning output, got none")
+	}
+}
+
 func TestRun_CancelStops(t *testing.T) {
 	w, _, _ := makeWatcher(t, nil)
 
