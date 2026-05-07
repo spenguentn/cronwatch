@@ -76,3 +76,18 @@ func TestLabelNotifier_EmptyLabelsPassesThrough(t *testing.T) {
 		t.Errorf("expected subject hello, got %q", got.Subject)
 	}
 }
+
+// TestLabelNotifier_DoesNotMutateOriginalMeta verifies that the notifier does
+// not modify the Meta map of the original message passed by the caller.
+func TestLabelNotifier_DoesNotMutateOriginalMeta(t *testing.T) {
+	inner := NotifierFunc(func(_ context.Context, _ Message) error { return nil })
+	n := NewLabelNotifier(inner, map[string]string{"env": "prod"})
+	origMeta := map[string]string{"service": "worker"}
+	msg := Message{Subject: "test", Meta: origMeta}
+	if err := n.Notify(context.Background(), msg); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := origMeta["env"]; ok {
+		t.Error("original Meta map was mutated: 'env' key should not have been added")
+	}
+}
